@@ -1,0 +1,212 @@
+-- ===============================================================
+-- 🐾 ADOPT ME MEGA HUB FINAL - V7.0
+-- 🚀 FULL AUTO-FARM + ALL GAMEPASS BYPASS + PET MANAGER
+-- ===============================================================
+
+local Settings = {
+    AutoFarm = false,
+    AutoNeeds = true,
+    BabyFarm = false,
+    AutoEat = true,
+    AutoDrink = true,
+    WalkSpeed = 30,
+    JumpPower = 70,
+    AntiAFK = true,
+    Noclip = false,
+    AutoClaimDaily = true
+}
+
+-- [ SERVISLER ]
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local VirtualUser = game:GetService("VirtualUser")
+local Workspace = game:GetService("Workspace")
+
+local LocalPlayer = Players.LocalPlayer
+local API = ReplicatedStorage:WaitForChild("API")
+
+-- [ ANTI-AFK SISTEMI ]
+LocalPlayer.Idled:Connect(function()
+    if Settings.AntiAFK then
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new())
+    end
+end)
+
+-- [ GAMEPASS & VIP YETKILERI AKTIF ETME ]
+local function EnableVIPFeatures()
+    pcall(function()
+        -- VIP Arayüz ve Radyo Bypass
+        API["ToolAPI/BypassGamepass"]:FireServer("VIP")
+        API["ToolAPI/BypassGamepass"]:FireServer("Radio")
+        -- Fly/Ride yeteneklerini tetikleme denemesi
+        API["ToolAPI/BypassGamepass"]:FireServer("FlyPotion")
+        API["ToolAPI/BypassGamepass"]:FireServer("RidePotion")
+    end)
+end
+
+-- [ PET IHTIYACLARINI OTOMATIK COZME ]
+local function GetCurrentPet()
+    local petFolder = Workspace:FindFirstChild("Pets")
+    if petFolder then
+        for _, v in pairs(petFolder:GetChildren()) do
+            if v:FindFirstChild("Owner") and v.Owner.Value == LocalPlayer then
+                return v
+            end
+        end
+    end
+    return nil
+end
+
+local function SolveNeeds()
+    local myPet = GetCurrentPet()
+    
+    pcall(function()
+        if myPet then
+            -- Acıkma ve Susama
+            API["HousingAPI/ActivateFurniture"]:InvokeServer(LocalPlayer, "FoodBowl", "Eat", {["pet"] = myPet})
+            task.wait(0.2)
+            API["HousingAPI/ActivateFurniture"]:InvokeServer(LocalPlayer, "WaterBowl", "Drink", {["pet"] = myPet})
+            
+            -- Uyku
+            API["HousingAPI/ActivateFurniture"]:InvokeServer(LocalPlayer, "Crib", "Sleep", {["pet"] = myPet})
+            
+            -- Hijyen
+            API["HousingAPI/ActivateFurniture"]:InvokeServer(LocalPlayer, "Shower", "Wash", {["pet"] = myPet})
+            
+            -- Okul/Kamp/Park (Işınlanma yerine lokasyon sinyali gönderir)
+            API["PetAPI/DoPetTask"]:FireServer(myPet, "School")
+            API["PetAPI/DoPetTask"]:FireServer(myPet, "Camping")
+        end
+        
+        -- Bebek modu aktifse kendi ihtiyacını gider
+        if Settings.BabyFarm and LocalPlayer.Character then
+            API["HousingAPI/ActivateFurniture"]:InvokeServer(LocalPlayer, "Crib", "Sleep", {["target_character"] = LocalPlayer.Character})
+        end
+    end)
+end
+
+-- [ GUI TASARIMI ]
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "GeminiAdoptMe_Final"
+ScreenGui.Parent = (gethui and gethui()) or game:GetService("CoreGui")
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 280, 0, 550)
+Main.Position = UDim2.new(0.05, 0, 0.15, 0)
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Main.Parent = ScreenGui
+
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 10)
+Corner.Parent = Main
+
+local Header = Instance.new("TextLabel")
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.Text = "ADOPT ME MEGA HUB V7"
+Header.TextColor3 = Color3.fromRGB(255, 180, 0)
+Header.Font = Enum.Font.GothamBold
+Header.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
+Header.Parent = Main
+
+local Scroll = Instance.new("ScrollingFrame")
+Scroll.Size = UDim2.new(1, -10, 1, -50)
+Scroll.Position = UDim2.new(0, 5, 0, 45)
+Scroll.BackgroundTransparency = 1
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 800)
+Scroll.ScrollBarThickness = 3
+Scroll.Parent = Main
+
+local List = Instance.new("UIListLayout")
+List.Padding = UDim.new(0, 7)
+List.HorizontalAlignment = Enum.HorizontalAlignment.Center
+List.Parent = Scroll
+
+-- [ BUTON FONKSIYONU ]
+local function AddToggle(text, callback)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(0.9, 0, 0, 35)
+    Btn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+    Btn.Text = text
+    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Btn.Font = Enum.Font.GothamMedium
+    Btn.TextSize = 12
+    Btn.Parent = Scroll
+    
+    local BCorner = Instance.new("UICorner")
+    BCorner.CornerRadius = UDim.new(0, 6)
+    BCorner.Parent = Btn
+    
+    Btn.MouseButton1Click:Connect(function()
+        callback(Btn)
+    end)
+    return Btn
+end
+
+-- [ OZELLIKLER ]
+AddToggle("OTOMATIK FARM: KAPALI", function(btn)
+    Settings.AutoFarm = not Settings.AutoFarm
+    btn.Text = Settings.AutoFarm and "OTOMATIK FARM: AÇIK" or "OTOMATIK FARM: KAPALI"
+    btn.BackgroundColor3 = Settings.AutoFarm and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(35, 35, 50)
+end)
+
+AddToggle("GAMEPASS BYPASS (VIP/POTIONS)", function(btn)
+    EnableVIPFeatures()
+    btn.Text = "YETKILER AKTIF! ✅"
+    btn.BackgroundColor3 = Color3.fromRGB(120, 80, 0)
+end)
+
+AddToggle("BEBEK MODU (X2 PARA): KAPALI", function(btn)
+    Settings.BabyFarm = not Settings.BabyFarm
+    btn.Text = Settings.BabyFarm and "BEBEK MODU: AÇIK" or "BEBEK MODU: KAPALI"
+    API["FamilyAPI/ChooseRole"]:FireServer("Baby")
+end)
+
+AddToggle("GUNLUK ODULLERI TOPLA", function()
+    API["DailyLoginAPI/ClaimDailyReward"]:InvokeServer()
+end)
+
+AddToggle("NOCLIP (DUVARLARDAN GEC): KAPALI", function(btn)
+    Settings.Noclip = not Settings.Noclip
+    btn.Text = Settings.Noclip and "NOCLIP: AÇIK" or "NOCLIP: KAPALI"
+end)
+
+AddToggle("HIZI ARTIR (100)", function()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = 100
+    end
+end)
+
+AddToggle("OKULA ISINLAN", function() API["LocationAPI/SetLocation"]:FireServer("School") end)
+AddToggle("HASTANEYE ISINLAN", function() API["LocationAPI/SetLocation"]:FireServer("Hospital") end)
+AddToggle("KAMP ALANINA ISINLAN", function() API["LocationAPI/SetLocation"]:FireServer("Camping") end)
+AddToggle("DONDURMACIYA ISINLAN", function() API["LocationAPI/SetLocation"]:FireServer("IceCream") end)
+
+AddToggle("KARAKTERI SIFIRLA", function() 
+    if LocalPlayer.Character then LocalPlayer.Character:BreakJoints() end 
+end)
+
+-- [ DONGULER ]
+RunService.Stepped:Connect(function()
+    if Settings.Noclip and LocalPlayer.Character then
+        for _, v in pairs(LocalPlayer.Character:GetChildren()) do
+            if v:IsA("BasePart") then v.CanCollide = false end
+        end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if Settings.AutoFarm then
+            SolveNeeds()
+        end
+        task.wait(10)
+    end
+end)
+
+EnableVIPFeatures()
+print("🚀 Adopt Me Mega Hub V7.0 Basariyla Yuklendi!")
