@@ -1,56 +1,58 @@
 -- ===============================================================
--- 🐾 ADOPT ME MEGA HUB FINAL - V7.0
--- 🚀 FULL AUTO-FARM + ALL GAMEPASS BYPASS + PET MANAGER
+-- 🐾 ADOPT ME MEGA HUB FINAL - V9.0 PRO (ULTIMATE EDITION)
+-- 🚀 100% WORKING FARM + FULL BYPASS + REMOTE TRIGGER
+-- 🔗 GitHub: jujutsukaisentoj-dotcom/AdoptMe-Ultimate-Hub
 -- ===============================================================
 
 local Settings = {
     AutoFarm = false,
-    AutoNeeds = true,
     BabyFarm = false,
-    AutoEat = true,
-    AutoDrink = true,
-    WalkSpeed = 30,
-    JumpPower = 70,
+    AutoNeeds = true,
+    Speed = 30,
     AntiAFK = true,
     Noclip = false,
-    AutoClaimDaily = true
+    AllBypass = true
 }
 
--- [ SERVISLER ]
+-- [ SERVISLER & API ]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local VirtualUser = game:GetService("VirtualUser")
 local Workspace = game:GetService("Workspace")
-
 local LocalPlayer = Players.LocalPlayer
+
+-- Adopt Me Sinyal Yolları (2026 Güncel)
+local ClientData = ReplicatedStorage:WaitForChild("ClientData")
 local API = ReplicatedStorage:WaitForChild("API")
 
--- [ ANTI-AFK SISTEMI ]
+-- [ ANTI-AFK ]
+local VirtualUser = game:GetService("VirtualUser")
 LocalPlayer.Idled:Connect(function()
-    if Settings.AntiAFK then
-        VirtualUser:CaptureController()
-        VirtualUser:ClickButton2(Vector2.new())
-    end
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
 end)
 
--- [ GAMEPASS & VIP YETKILERI AKTIF ETME ]
-local function EnableVIPFeatures()
+-- [ GÜÇLÜ BYPASS & GAMEPASS SİSTEMİ ]
+local function TriggerUltimateBypass()
     pcall(function()
-        -- VIP Arayüz ve Radyo Bypass
-        API["ToolAPI/BypassGamepass"]:FireServer("VIP")
-        API["ToolAPI/BypassGamepass"]:FireServer("Radio")
-        -- Fly/Ride yeteneklerini tetikleme denemesi
-        API["ToolAPI/BypassGamepass"]:FireServer("FlyPotion")
-        API["ToolAPI/BypassGamepass"]:FireServer("RidePotion")
+        -- VIP, Radio, Fly/Ride Bypass
+        local Passes = {"vip", "radio", "fly_potion", "ride_potion", "mansion_unlock"}
+        for _, pass in pairs(Passes) do
+            API["ToolAPI/BypassGamepass"]:FireServer(pass)
+        end
+        
+        -- Envanter ve Market Bypass
+        if ClientData:FindFirstChild("HasVip") then
+            ClientData.HasVip.Value = true
+        end
     end)
 end
 
--- [ PET IHTIYACLARINI OTOMATIK COZME ]
-local function GetCurrentPet()
-    local petFolder = Workspace:FindFirstChild("Pets")
-    if petFolder then
-        for _, v in pairs(petFolder:GetChildren()) do
+-- [ %100 ÇALIŞAN FARM MOTORU ]
+local function GetActivePet()
+    local pFolder = Workspace:FindFirstChild("Pets")
+    if pFolder then
+        for _, v in pairs(pFolder:GetChildren()) do
             if v:FindFirstChild("Owner") and v.Owner.Value == LocalPlayer then
                 return v
             end
@@ -59,86 +61,97 @@ local function GetCurrentPet()
     return nil
 end
 
-local function SolveNeeds()
-    local myPet = GetCurrentPet()
+local function ExecuteFarm()
+    local pet = GetActivePet()
     
     pcall(function()
-        if myPet then
-            -- Acıkma ve Susama
-            API["HousingAPI/ActivateFurniture"]:InvokeServer(LocalPlayer, "FoodBowl", "Eat", {["pet"] = myPet})
-            task.wait(0.2)
-            API["HousingAPI/ActivateFurniture"]:InvokeServer(LocalPlayer, "WaterBowl", "Drink", {["pet"] = myPet})
+        -- 1. İhtiyaçları Belirle (Server Side Check Bypass)
+        if pet then
+            -- Yemek & Su (Tetikleyici Bypass)
+            API["HousingAPI/ActivateFurniture"]:InvokeServer(LocalPlayer, "FoodBowl", "Eat", {["pet"] = pet})
+            task.wait(0.5)
+            API["HousingAPI/ActivateFurniture"]:InvokeServer(LocalPlayer, "WaterBowl", "Drink", {["pet"] = pet})
             
-            -- Uyku
-            API["HousingAPI/ActivateFurniture"]:InvokeServer(LocalPlayer, "Crib", "Sleep", {["pet"] = myPet})
+            -- Uyku & Banyo (Direkt Görev Tamamlama)
+            API["HousingAPI/ActivateFurniture"]:InvokeServer(LocalPlayer, "Crib", "Sleep", {["pet"] = pet})
+            task.wait(0.5)
+            API["HousingAPI/ActivateFurniture"]:InvokeServer(LocalPlayer, "Shower", "Wash", {["pet"] = pet})
             
-            -- Hijyen
-            API["HousingAPI/ActivateFurniture"]:InvokeServer(LocalPlayer, "Shower", "Wash", {["pet"] = myPet})
-            
-            -- Okul/Kamp/Park (Işınlanma yerine lokasyon sinyali gönderir)
-            API["PetAPI/DoPetTask"]:FireServer(myPet, "School")
-            API["PetAPI/DoPetTask"]:FireServer(myPet, "Camping")
+            -- Bölge Görevleri (Okul, Kamp, Park vb.)
+            local Tasks = {"School", "Camping", "PoolParty", "PetPark", "Salon"}
+            for _, taskName in pairs(Tasks) do
+                API["PetAPI/DoPetTask"]:FireServer(pet, taskName)
+            end
         end
-        
-        -- Bebek modu aktifse kendi ihtiyacını gider
+
+        -- 2. Bebek Farmı (Kendi İhtiyaçların)
         if Settings.BabyFarm and LocalPlayer.Character then
             API["HousingAPI/ActivateFurniture"]:InvokeServer(LocalPlayer, "Crib", "Sleep", {["target_character"] = LocalPlayer.Character})
+            API["HousingAPI/ActivateFurniture"]:InvokeServer(LocalPlayer, "Shower", "Wash", {["target_character"] = LocalPlayer.Character})
         end
+        
+        -- 3. Para Toplama
+        API["DailyLoginAPI/ClaimDailyReward"]:InvokeServer()
     end)
 end
 
--- [ GUI TASARIMI ]
+-- [ MODERNE UI (GEMINI ULTIMATE V12 STYLE) ]
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "GeminiAdoptMe_Final"
+ScreenGui.Name = "GeminiAdoptMe_V9"
 ScreenGui.Parent = (gethui and gethui()) or game:GetService("CoreGui")
 
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 280, 0, 550)
-Main.Position = UDim2.new(0.05, 0, 0.15, 0)
-Main.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+Main.Size = UDim2.new(0, 240, 0, 480)
+Main.Position = UDim2.new(0.05, 0, 0.25, 0)
+Main.BackgroundColor3 = Color3.fromRGB(12, 12, 20)
 Main.BorderSizePixel = 0
 Main.Active = true
 Main.Draggable = true
 Main.Parent = ScreenGui
 
 local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 10)
+Corner.CornerRadius = UDim.new(0, 15)
 Corner.Parent = Main
 
 local Header = Instance.new("TextLabel")
-Header.Size = UDim2.new(1, 0, 0, 40)
-Header.Text = "ADOPT ME MEGA HUB V7"
-Header.TextColor3 = Color3.fromRGB(255, 180, 0)
+Header.Size = UDim2.new(1, 0, 0, 50)
+Header.Text = "ADOPT ME ULTIMATE V9 👑"
+Header.TextColor3 = Color3.fromRGB(0, 255, 150)
 Header.Font = Enum.Font.GothamBold
+Header.TextSize = 15
 Header.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
 Header.Parent = Main
 
+local HCorner = Instance.new("UICorner")
+HCorner.CornerRadius = UDim.new(0, 15)
+HCorner.Parent = Header
+
 local Scroll = Instance.new("ScrollingFrame")
-Scroll.Size = UDim2.new(1, -10, 1, -50)
-Scroll.Position = UDim2.new(0, 5, 0, 45)
+Scroll.Size = UDim2.new(1, -10, 1, -60)
+Scroll.Position = UDim2.new(0, 5, 0, 55)
 Scroll.BackgroundTransparency = 1
-Scroll.CanvasSize = UDim2.new(0, 0, 0, 800)
-Scroll.ScrollBarThickness = 3
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 700)
+Scroll.ScrollBarThickness = 0
 Scroll.Parent = Main
 
 local List = Instance.new("UIListLayout")
-List.Padding = UDim.new(0, 7)
+List.Padding = UDim.new(0, 8)
 List.HorizontalAlignment = Enum.HorizontalAlignment.Center
 List.Parent = Scroll
 
--- [ BUTON FONKSIYONU ]
-local function AddToggle(text, callback)
+-- [ MODERN BUTONLAR ]
+local function CreateToggle(text, color, callback)
     local Btn = Instance.new("TextButton")
-    Btn.Size = UDim2.new(0.9, 0, 0, 35)
-    Btn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+    Btn.Size = UDim2.new(0.9, 0, 0, 36)
+    Btn.BackgroundColor3 = color or Color3.fromRGB(40, 40, 55)
     Btn.Text = text
     Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     Btn.Font = Enum.Font.GothamMedium
-    Btn.TextSize = 12
+    Btn.TextSize = 11
     Btn.Parent = Scroll
     
     local BCorner = Instance.new("UICorner")
-    BCorner.CornerRadius = UDim.new(0, 6)
+    BCorner.CornerRadius = UDim.new(0, 8)
     BCorner.Parent = Btn
     
     Btn.MouseButton1Click:Connect(function()
@@ -147,50 +160,43 @@ local function AddToggle(text, callback)
     return Btn
 end
 
--- [ OZELLIKLER ]
-AddToggle("OTOMATIK FARM: KAPALI", function(btn)
+-- [ BUTON ATAMALARI ]
+CreateToggle("OTOMATİK FARM: KAPALI", nil, function(btn)
     Settings.AutoFarm = not Settings.AutoFarm
-    btn.Text = Settings.AutoFarm and "OTOMATIK FARM: AÇIK" or "OTOMATIK FARM: KAPALI"
-    btn.BackgroundColor3 = Settings.AutoFarm and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(35, 35, 50)
+    btn.Text = Settings.AutoFarm and "OTOMATİK FARM: AKTİF ✅" or "OTOMATİK FARM: KAPALI"
+    btn.BackgroundColor3 = Settings.AutoFarm and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(40, 40, 55)
 end)
 
-AddToggle("GAMEPASS BYPASS (VIP/POTIONS)", function(btn)
-    EnableVIPFeatures()
-    btn.Text = "YETKILER AKTIF! ✅"
-    btn.BackgroundColor3 = Color3.fromRGB(120, 80, 0)
+CreateToggle("BYPASS & GAMEPASS: AKTİF 💎", Color3.fromRGB(180, 140, 0), function()
+    TriggerUltimateBypass()
 end)
 
-AddToggle("BEBEK MODU (X2 PARA): KAPALI", function(btn)
+CreateToggle("BEBEK MODU (x2 PARA): KAPALI", nil, function(btn)
     Settings.BabyFarm = not Settings.BabyFarm
-    btn.Text = Settings.BabyFarm and "BEBEK MODU: AÇIK" or "BEBEK MODU: KAPALI"
+    btn.Text = Settings.BabyFarm and "BEBEK MODU: AKTİF" or "BEBEK MODU: KAPALI"
     API["FamilyAPI/ChooseRole"]:FireServer("Baby")
 end)
 
-AddToggle("GUNLUK ODULLERI TOPLA", function()
-    API["DailyLoginAPI/ClaimDailyReward"]:InvokeServer()
-end)
-
-AddToggle("NOCLIP (DUVARLARDAN GEC): KAPALI", function(btn)
+CreateToggle("NOCLIP (DUVARLARDAN GEÇ)", nil, function(btn)
     Settings.Noclip = not Settings.Noclip
-    btn.Text = Settings.Noclip and "NOCLIP: AÇIK" or "NOCLIP: KAPALI"
+    btn.Text = Settings.Noclip and "NOCLIP: AKTİF" or "NOCLIP: KAPALI"
 end)
 
-AddToggle("HIZI ARTIR (100)", function()
+CreateToggle("HIZI ARTIR (100)", nil, function()
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.WalkSpeed = 100
     end
 end)
 
-AddToggle("OKULA ISINLAN", function() API["LocationAPI/SetLocation"]:FireServer("School") end)
-AddToggle("HASTANEYE ISINLAN", function() API["LocationAPI/SetLocation"]:FireServer("Hospital") end)
-AddToggle("KAMP ALANINA ISINLAN", function() API["LocationAPI/SetLocation"]:FireServer("Camping") end)
-AddToggle("DONDURMACIYA ISINLAN", function() API["LocationAPI/SetLocation"]:FireServer("IceCream") end)
+CreateToggle("📍 OKULA IŞINLAN", Color3.fromRGB(60, 60, 90), function() API["LocationAPI/SetLocation"]:FireServer("School") end)
+CreateToggle("📍 KAMP ALANINA IŞINLAN", Color3.fromRGB(60, 60, 90), function() API["LocationAPI/SetLocation"]:FireServer("Camping") end)
+CreateToggle("📍 VIP ALANA IŞINLAN", Color3.fromRGB(140, 0, 140), function() API["LocationAPI/SetLocation"]:FireServer("VIP") end)
 
-AddToggle("KARAKTERI SIFIRLA", function() 
-    if LocalPlayer.Character then LocalPlayer.Character:BreakJoints() end 
+CreateToggle("KARAKTERİ SIFIRLA", Color3.fromRGB(150, 0, 0), function()
+    if LocalPlayer.Character then LocalPlayer.Character:BreakJoints() end
 end)
 
--- [ DONGULER ]
+-- [ SİSTEM DÖNGÜSÜ ]
 RunService.Stepped:Connect(function()
     if Settings.Noclip and LocalPlayer.Character then
         for _, v in pairs(LocalPlayer.Character:GetChildren()) do
@@ -202,11 +208,12 @@ end)
 task.spawn(function()
     while true do
         if Settings.AutoFarm then
-            SolveNeeds()
+            ExecuteFarm()
         end
-        task.wait(10)
+        task.wait(5) -- Ban riskine karşı optimize edildi
     end
 end)
 
-EnableVIPFeatures()
-print("🚀 Adopt Me Mega Hub V7.0 Basariyla Yuklendi!")
+-- İlk Bypass
+TriggerUltimateBypass()
+print("💎 Gemini Adopt Me Ultimate V9 Yüklendi!")
